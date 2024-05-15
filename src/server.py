@@ -17,10 +17,6 @@ def get_tickers():
     # Return the tickers as a JSON response
     return jsonify(tickers)
 
-import pandas as pd
-
-app = Flask(__name__)
-
 @app.route('/backtest', methods=['POST'])
 def backtest():
     data = request.json
