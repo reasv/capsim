@@ -1,6 +1,5 @@
-from plot_data import plot_results
-from prepare_data import download_price_data, load_source_data
-from strategy import annualize, process_strategy
+from .prepare_data import download_price_data, load_source_data
+from .strategy import annualize, process_strategy
 
 class Portfolio():
     def __init__(self, ticker="VTI", start_date="2001-01-01", initial_investment=1000000, dividend_tax=0.26, capital_gains_tax=0.26, yearly_sale_percentage=0.04, name=None):
@@ -31,11 +30,6 @@ class Portfolio():
     def run(self):
         self.load_data()
         self.process()
-
-    def plot(self):
-        if self.monthly is None or self.yearly is None:
-            self.run()
-        plot_results(self.monthly, self.yearly, self.ticker)
 
     # Generates a new portfolio with the same parameters except for the ones passed as arguments
     def generate_new(self, **kwargs):
