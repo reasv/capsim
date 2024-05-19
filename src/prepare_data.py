@@ -55,6 +55,7 @@ def load_source_data(prices_file, bigmac_file, start_date):
     # Merge datasets
     df = pd.merge_asof(df, bmprice, on="timestamp")
     # Normalize CPI to 1 and stock price to 100
+    df['raw_cpi'] = df['cpi']
     df['cpi'] = df['cpi'].fillna(bmprice['cpi'].iloc[0])
     df['cpi'] = (df['cpi'] / df['cpi'].iloc[0]).round(3)
     df['price'] = (df['price'] / df['price'].iloc[0] * 100).round(3)
