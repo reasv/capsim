@@ -111,3 +111,4 @@ __pypackages__/
 .ropeproject
 
 # mkdocs documentat
+sqlite.db
