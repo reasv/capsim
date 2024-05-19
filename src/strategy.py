@@ -110,3 +110,11 @@ def process_strategy(df: pd.DataFrame, initial_investment: float, dividend_tax: 
     # Create a new DataFrame for the new time series
     new_df = pd.DataFrame(new_time_series, index=df.index)
     return new_df
+
+def cut_data_and_normalize(df: pd.DataFrame, start_date: str | None):
+    if start_date is not None:
+        start_date_dt = pd.to_datetime(start_date)
+        df = df[df['timestamp'] >= start_date_dt]
+    df['price'] = (df['raw_price'] / df['raw_price'].iloc[0] * 100).round(4)
+    df['cpi'] = (df['raw_cpi'] / df['raw_cpi'].iloc[0]).round(4)
+    return df

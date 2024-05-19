@@ -1,19 +1,21 @@
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, abort
 from flask_cors import CORS
 from .portfolio import Portfolio  # Assuming Portfolio is defined in Portfolio.py
+from .db import list_tickers, erase_ticker, fetch_and_save_timeseries, load_environment_variables
 
 app = Flask(__name__)
 CORS(app)
 
 @app.route('/tickers', methods=['GET'])
 def get_tickers():
-    # List all files in the current directory
-    files = os.listdir('.')
-    
-    # Filter out the CSV files and extract ticker symbols
-    tickers = [file.split('_')[2].replace('.csv', '') for file in files if file.startswith('monthly_adjusted_') and file.endswith('.csv')]
-    
+    tickers = list_tickers('asset')
+    # Return the tickers as a JSON response
+    return jsonify(tickers)
+
+@app.route('/cpi', methods=['GET'])
+def get_cpi():
+    tickers = list_tickers('cpi')
     # Return the tickers as a JSON response
     return jsonify(tickers)
 
@@ -46,4 +48,44 @@ def backtest():
             "yearly_results": yearly_results
         })
 
-    return jsonify({"results": results})
+    response = jsonify({"results": results})
+    response.headers.add('Content-Type', 'application/json')
+    return response
+
+
+def check_authorization():
+    admin_pass = os.getenv('ADMIN_PASS')
+    auth_header = request.headers.get('Authorization')
+
+    if auth_header is None or auth_header != admin_pass:
+        abort(401)  # Unauthorized
+
+@app.route('/tickers/<ticker>', methods=['DELETE'])
+def delete_ticker(ticker):
+    load_environment_variables()
+    check_authorization()
+
+    try:
+        erase_ticker(ticker, 'asset')
+        return jsonify({"message": f"Ticker {ticker} erased successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/tickers/<ticker>', methods=['PUT'])
+def update_ticker(ticker):
+    load_environment_variables()
+    check_authorization()
+
+    try:
+        fetch_and_save_timeseries(ticker, "asset")
+        return jsonify({"message": f"Timeseries for ticker {ticker} fetched and saved successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/auth-check', methods=['GET'])
+def auth_check():
+    try:
+        check_authorization()
+        return jsonify({"authorized": True}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 401
