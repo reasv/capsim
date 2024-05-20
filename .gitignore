@@ -112,3 +112,4 @@ __pypackages__/
 
 # mkdocs documentat
 sqlite.db
+database.db
