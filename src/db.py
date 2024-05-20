@@ -19,6 +19,10 @@ def load_environment_variables():
     if 'ADMIN_PASS' not in os.environ:
         os.environ['ADMIN_PASS'] = 'admin'
 
+    # Throw exception if API_KEY is not provided
+    if 'API_KEY' not in os.environ:
+        raise ValueError("API_KEY environment variable is not set.")
+
 def fetch_and_save_timeseries(ticker=None, type='asset'):
     load_environment_variables()
 
@@ -33,6 +37,10 @@ def fetch_and_save_timeseries(ticker=None, type='asset'):
     else:
         raise ValueError("For type 'asset', ticker must be provided.")
     
+    # Cut off the api key from the URL before printing
+
+    printURL = url.split("&apikey")[0]
+    print(f"Fetching data from AlphaVantage API: {printURL}")
     response = requests.get(url)
     
     if response.status_code != 200:
@@ -110,6 +118,51 @@ def fetch_and_save_timeseries(ticker=None, type='asset'):
 
     conn.commit()
     conn.close()
+
+def ensure_initialization():
+    # Make sure that the database is initialized and we have CPI data, and VTI as an asset
+    # If not, fetch the data from AlphaVantage and save it to the database
+    load_environment_variables()
+    conn = sqlite3.connect(os.environ['DB_FILE'])
+    cursor = conn.cursor()
+    # Check if the timeseries table exists
+    cursor.execute('''
+        SELECT name 
+        FROM sqlite_master 
+        WHERE type='table' AND name='timeseries'
+    ''')
+    table_exists = cursor.fetchone()
+
+    if not table_exists:
+        fetch_and_save_timeseries(type='cpi')
+        fetch_and_save_timeseries(ticker='VTI', type='asset')
+        return
+    
+    # Check if CPI data exists
+    cursor.execute('''
+        SELECT COUNT(*)
+        FROM timeseries
+        WHERE ticker = 'CPI' AND type = 'cpi'
+    ''')
+    cpi_count = cursor.fetchone()[0]
+
+    # Check if VTI data exists
+    cursor.execute('''
+        SELECT COUNT(*)
+        FROM timeseries
+        WHERE ticker = 'VTI' AND type = 'asset'
+    ''')
+    vti_count = cursor.fetchone()[0]
+
+    conn.close()
+
+    # Fetch CPI data if not present
+    if cpi_count == 0:
+        fetch_and_save_timeseries(type='cpi')
+
+    # Fetch VTI data if not present
+    if vti_count == 0:
+        fetch_and_save_timeseries(ticker='VTI', type='asset')
 
 def load_timeseries(ticker):
     load_environment_variables()
