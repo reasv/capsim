@@ -22,7 +22,7 @@ def get_cpi():
 @app.route('/backtest', methods=['POST'])
 def backtest():
     data = request.json
-    error_response = {"error": "Invalid input. Expected a JSON object with a 'portfolios' field containing an array of portfolio parameters."}
+    error_response = {"error": "Invalid input. Expected a JSON object"}
     # Ensure the request contains a 'portfolios' field with a list of portfolio parameters
     if data is None or 'portfolios' not in data or not isinstance(data['portfolios'], list):
         return jsonify(error_response), 400
