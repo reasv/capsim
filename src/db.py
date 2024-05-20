@@ -1,3 +1,4 @@
+from math import e
 import os
 import requests
 import sqlite3
@@ -5,11 +6,17 @@ import pandas as pd
 
 def load_environment_variables():
     # Load environment variables
-    # Read .env file manually and set environment variables
-    with open('.env') as f:
-        for line in f:
-            key, value = line.strip().split('=')
-            os.environ[key] = value
+    # Check if .env file exists
+    try:
+        # Read .env file manually and set environment variables
+        with open('.env') as f:
+            for line in f:
+                key, value = line.strip().split('=')
+                # Set environment variable only if it is not already set
+                if key not in os.environ:
+                    os.environ[key] = value
+    except:
+        print("No .env file found or file could not be read. Using system environment variables.")
 
     # Set default for DB_FILE if not provided
     if 'DB_FILE' not in os.environ:
@@ -24,8 +31,6 @@ def load_environment_variables():
         raise ValueError("API_KEY environment variable is not set.")
 
 def fetch_and_save_timeseries(ticker=None, type='asset'):
-    load_environment_variables()
-
     api_key = os.getenv("API_KEY")
     if not api_key:
         raise ValueError("API_KEY environment variable is not set.")
@@ -165,7 +170,7 @@ def ensure_initialization():
         fetch_and_save_timeseries(ticker='VTI', type='asset')
 
 def load_timeseries(ticker):
-    load_environment_variables()
+    
     conn = sqlite3.connect(os.environ['DB_FILE'])
     cursor = conn.cursor()
 
@@ -207,7 +212,7 @@ def load_timeseries(ticker):
     return merged_df
 
 def erase_ticker(ticker, type):
-    load_environment_variables()
+    
     conn = sqlite3.connect(os.environ['DB_FILE'])
     cursor = conn.cursor()
 
@@ -221,7 +226,7 @@ def erase_ticker(ticker, type):
     conn.close()
 
 def list_tickers(type: str):
-    load_environment_variables()
+    
     conn = sqlite3.connect(os.environ['DB_FILE'])
     cursor = conn.cursor()
 
